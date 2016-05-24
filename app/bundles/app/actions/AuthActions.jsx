@@ -1,75 +1,93 @@
-import apiCall            from 'app/libs/apiCall';
+import apiCall             from 'app/libs/apiCall';
+import { paths, apiPaths } from '../routes/authPaths';
+import actionTypes         from '../constants/authConstants';
 
-import * as actionTypes   from '../constants/AuthConstants';
 
-
-export function setLoggedInState(user) {
-
+export function setLoggedInState(
+  user: string,
+) {
   return {
     type: actionTypes.AUTH_LOGGED_IN,
-    user: user
+    user: user,
   };
-
 }
 
 
-export function login({ data, authAgent, router }) {
-
+export function login(
+  {
+    authData,
+    authAgent,
+    history,
+  } : {
+    authData: {
+      api_user: {
+        email: string,
+        password: string,
+      },
+    },
+    authAgent: {
+      login: Function,
+    },
+    history: Object,
+  }
+) {
   return dispatch => {
 
     dispatch({
-      type: actionTypes.AUTH_LOGIN_REQUESTED
+      type: actionTypes.AUTH_LOGIN_REQUESTED,
     });
 
     return apiCall({
       method: 'POST',
-      path  : '/login',
-      data  : data
+      path  : apiPaths.loginPath(),
+      data  : authData,
     })
       .then(res => {
-
         const { 'email': user, 'authentication_token': token } = res.data.user;
 
         authAgent.login(user, token, {
           sessionOnly: false,
-          cb         : () => {
-
+          callback   : () => {
             dispatch({
               type: actionTypes.AUTH_LOGIN_SUCCEED,
-              user: user
+              user: user,
             });
-            if (!router.goBack()) router.transitionTo('/');
-
-          }
+            if (!history.goBack()) history.pushState(null, '/');
+          },
         });
-
       })
       .catch(res => {
         dispatch({
           type  : actionTypes.AUTH_LOGIN_FAILED,
           errors: {
             code: res.status,
-            data: res.data
-          }
+            data: res.data,
+          },
         });
       });
 
   };
-
 }
 
 
-export function logout({ authAgent, router, backPath }) {
-
+export function logout({
+  authAgent,
+  history,
+  nextLocation,
+} : {
+  authAgent: {
+    logout: Function,
+  },
+  history     : Object,
+  nextLocation: string,
+}) {
   return dispatch => {
-
     authAgent.logout(() => {
       dispatch({
-        type: actionTypes.AUTH_LOGGED_OUT
+        type: actionTypes.AUTH_LOGGED_OUT,
       });
-      router.transitionTo('/logout', null, { backPath });
+
+      history.pushState({ nextLocation }, paths.logoutPath());
     });
-
   };
-
 }

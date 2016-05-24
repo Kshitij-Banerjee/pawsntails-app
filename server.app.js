@@ -1,8 +1,7 @@
-/* eslint no-var: 0 */
+import 'babel-polyfill';
 
-require('babel/register')();
+import server  from './server';
+import initter from './app/bundles/app/initters/server';
+import config  from './configs/server/server.app';
 
-var initter = require('./app/bundles/app/initters/server'),
-    config  = require('./config/server.app');
-
-require('./server')(initter, config);
+server(initter, config);
